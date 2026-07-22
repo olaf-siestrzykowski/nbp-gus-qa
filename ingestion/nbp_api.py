@@ -62,10 +62,11 @@ def _format_rate_doc(data: dict, table: str) -> dict | None:
 
 
 def fetch_exchange_rates(last_n: int = 14) -> list[dict]:
-    """Fetch last N exchange rate tables from NBP API (max 14 per request)."""
+    """Fetch last N exchange rate tables from NBP API. Table B max is 14 (weekly)."""
     docs = []
+    limits = {"A": last_n, "B": min(last_n, 14), "C": last_n}
     for table in ["A", "B", "C"]:
-        url = f"{NBP_API}/exchangerates/tables/{table}/last/{last_n}/?format=json"
+        url = f"{NBP_API}/exchangerates/tables/{table}/last/{limits[table]}/?format=json"
         data = _get(url)
         if not data:
             continue
@@ -88,7 +89,7 @@ def fetch_reference_rate() -> list[dict]:
 
 def fetch_gold_price(last_n: int = 14) -> list[dict]:
     """Fetch gold price history from NBP API."""
-    url = f"{NBP_API}/cennik/gold/last/{last_n}/?format=json"
+    url = f"{NBP_API}/cennik/zloto/ostatnie/{last_n}/?format=json"
     data = _get(url)
     if not data:
         return []

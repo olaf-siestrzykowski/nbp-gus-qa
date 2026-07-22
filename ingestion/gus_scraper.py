@@ -15,22 +15,22 @@ import logging
 logger = logging.getLogger(__name__)
 
 HEADERS = {"User-Agent": "Mozilla/5.0 (research bot; contact: portfolio project)"}
-GUS_BASE = "https://stat.gus.gov.pl"
+GUS_BASE = "https://stat.gov.pl"
 
 GUS_SOURCES = [
     {
-        "url": "https://stat.gus.gov.pl/obszary-tematyczne/ceny-handel/wskazniki-cen/szybki-szacunek-wskaznika-cen-towarow-i-uslug-konsumpcyjnych/",
+        "url": "https://stat.gov.pl/obszary-tematyczne/ceny-handel/wskazniki-cen/szybki-szacunek-wskaznika-cen-towarow-i-uslug-konsumpcyjnych/",
         "source_label": "GUS - Szybki szacunek CPI",
         "type": "cpi_flash",
     },
     {
-        "url": "https://stat.gus.gov.pl/obszary-tematyczne/ceny-handel/wskazniki-cen/wskazniki-cen-towarow-i-uslug-konsumpcyjnych-pot-inflacja-/",
+        "url": "https://stat.gov.pl/obszary-tematyczne/ceny-handel/wskazniki-cen/wskazniki-cen-towarow-i-uslug-konsumpcyjnych-pot-inflacja-/",
         "source_label": "GUS - Wskaźniki CPI",
         "type": "cpi_monthly",
     },
     {
-        "url": "https://stat.gus.gov.pl/obszary-tematyczne/rachunki-narodowe/rachunki-kwartalne/produkt-krajowy-brutto-szacunek-wstepny/",
-        "source_label": "GUS - PKB szacunek wstępny",
+        "url": "https://stat.gov.pl/obszary-tematyczne/rachunki-narodowe/kwartalne-rachunki-narodowe/",
+        "source_label": "GUS - PKB rachunki kwartalne",
         "type": "gdp_flash",
     },
 ]
