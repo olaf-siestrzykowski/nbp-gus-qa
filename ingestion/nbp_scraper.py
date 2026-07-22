@@ -123,7 +123,8 @@ def scrape_rpp_communications(limit: int = 20) -> list[dict]:
 
 def scrape_nbp_press_releases(limit: int = 20) -> list[dict]:
     """Fetch general NBP monetary policy press releases."""
-    url = "https://www.nbp.pl/home.aspx?f=/aktualnosci/wiadomosci_2024.html"
+    year = datetime.now().year
+    url = f"https://www.nbp.pl/home.aspx?f=/aktualnosci/wiadomosci_{year}.html"
     docs = []
 
     try:
