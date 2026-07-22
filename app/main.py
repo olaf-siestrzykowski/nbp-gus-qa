@@ -1,8 +1,10 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from pathlib import Path
+import threading
 import logging
 
 from app.rag import answer
@@ -11,7 +13,34 @@ from app.vectorstore import collection_count
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="NBP/GUS Economic Q&A", version="0.1.0")
+_ingestion_status = {"running": False, "done": False, "error": None}
+
+
+def _run_ingestion():
+    _ingestion_status["running"] = True
+    try:
+        from ingestion.ingest import run
+        run()
+        _ingestion_status["done"] = True
+        logger.info("Background ingestion complete.")
+    except Exception as e:
+        _ingestion_status["error"] = str(e)
+        logger.error(f"Background ingestion failed: {e}")
+    finally:
+        _ingestion_status["running"] = False
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    if collection_count() == 0:
+        logger.info("DB empty — starting background ingestion.")
+        threading.Thread(target=_run_ingestion, daemon=True).start()
+    else:
+        logger.info("DB already populated — skipping ingestion.")
+    yield
+
+
+app = FastAPI(title="NBP/GUS Economic Q&A", version="0.1.0", lifespan=lifespan)
 
 FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
 app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="static")
@@ -42,4 +71,9 @@ def ask(req: QuestionRequest):
 @app.get("/status")
 def status():
     count = collection_count()
-    return {"documents_in_db": count, "ready": count > 0}
+    return {
+        "documents_in_db": count,
+        "ready": count > 0,
+        "ingestion_running": _ingestion_status["running"],
+        "ingestion_error": _ingestion_status["error"],
+    }

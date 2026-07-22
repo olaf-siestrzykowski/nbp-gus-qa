@@ -90,9 +90,15 @@ async function checkStatus() {
     const d = await r.json();
     const bar = document.getElementById('status');
     if (d.ready) {
-      bar.innerHTML = `Database ready - <span>${d.documents_in_db} chunks</span> indexed`;
+      bar.innerHTML = `Database ready — <span>${d.documents_in_db} chunks</span> indexed`;
+    } else if (d.ingestion_running) {
+      bar.innerHTML = `<span class="spinner"></span>Indexing documents, please wait...`;
+      setTimeout(checkStatus, 5000);
+    } else if (d.ingestion_error) {
+      bar.textContent = `Ingestion error: ${d.ingestion_error}`;
     } else {
-      bar.textContent = 'Database empty - run ingestion first';
+      bar.textContent = 'Database empty — starting ingestion...';
+      setTimeout(checkStatus, 5000);
     }
   } catch(e) {
     document.getElementById('status').textContent = 'Could not reach server';
