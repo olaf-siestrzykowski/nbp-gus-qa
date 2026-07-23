@@ -20,11 +20,11 @@ Reframe: instead of generic Q&A, make it an **opinionated economic analyst** tha
 - [x] NBP gold price — fixed endpoint: /api/cenyzlota/last/{n}/ (was /api/cennik/zloto/ which was removed)
 
 ### Features
-- [ ] Chart generation: LLM picks chart type + data, backend renders it
-- [ ] Streaming responses (FastAPI + SSE, frontend EventSource)
-- [ ] Markdown rendering in answer box
-- [ ] Follow-up question context (conversation history in /ask)
-- [ ] "Analyst mode" system prompt: opinionated, cites numbers, draws comparisons
+- [x] Chart generation: LLM extracts Chart.js config, rendered inline after answer
+- [x] Streaming responses (FastAPI + SSE, frontend EventSource)
+- [x] Markdown rendering in answer box
+- [x] Follow-up question context (conversation history in /ask)
+- [x] "Analyst mode" system prompt: opinionated, cites numbers, draws comparisons
 
 ### Deploy
 - [ ] Sprawdzić `/status` na Render czy baza zaindeksowana po redeploy
