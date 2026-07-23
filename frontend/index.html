@@ -32,9 +32,10 @@
   .reset-btn { font-size: 0.72rem; color: var(--text-muted); background: none; border: 1px solid var(--border); border-radius: 2px; padding: 4px 10px; cursor: pointer; transition: color 0.15s, border-color 0.15s; }
   .reset-btn:hover { color: var(--text); border-color: var(--text-muted); }
 
-  .status-bar { font-size: 0.7rem; color: var(--text-muted); padding: 6px 32px; background: var(--bg); border-bottom: 1px solid var(--border); font-family: 'IBM Plex Mono', monospace; letter-spacing: 0.02em; }
-  .status-bar span.ok { color: var(--green); }
-  .status-bar span.accent { color: var(--accent); }
+  .status-bar { font-size: 0.72rem; color: #a09890; padding: 7px 32px; background: var(--surface); border-bottom: 1px solid var(--border); font-family: 'IBM Plex Mono', monospace; letter-spacing: 0.03em; border-left: 3px solid transparent; }
+  .status-bar.ready { border-left-color: var(--green); }
+  .status-bar span.ok { color: var(--green); font-weight: 500; }
+  .status-bar span.accent { color: var(--accent); font-weight: 500; }
 
   main { flex: 1; max-width: 800px; width: 100%; margin: 0 auto; padding: 28px 24px; display: flex; flex-direction: column; gap: 20px; }
 
@@ -188,14 +189,18 @@ async function checkStatus() {
     const d = await r.json();
     const bar = document.getElementById('status');
     if (d.ready) {
-      bar.innerHTML = `<span class="ok">●</span> Baza gotowa — <span class="accent">${d.documents_in_db} fragmentów</span> zaindeksowanych`;
+      bar.classList.add('ready');
+      bar.innerHTML = `<span class="ok">●</span> gotowa &nbsp;<span class="accent">${d.documents_in_db} fragmentów</span>`;
     } else if (d.ingestion_running) {
-      bar.innerHTML = `<span class="spinner"></span>Indeksuję dokumenty, proszę czekać...`;
+      bar.classList.remove('ready');
+      bar.innerHTML = `<span class="spinner"></span>indeksuję dokumenty...`;
       setTimeout(checkStatus, 5000);
     } else if (d.ingestion_error) {
-      bar.textContent = `Błąd ingestion: ${d.ingestion_error}`;
+      bar.classList.remove('ready');
+      bar.textContent = `błąd: ${d.ingestion_error}`;
     } else {
-      bar.textContent = 'Baza pusta — uruchamiam ingestion...';
+      bar.classList.remove('ready');
+      bar.textContent = 'baza pusta, uruchamiam ingestion...';
       setTimeout(checkStatus, 5000);
     }
   } catch(e) {
