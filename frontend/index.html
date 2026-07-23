@@ -1,6 +1,7 @@
-<title>NBP/GUS Economic Q&A</title>
+<title>Polski Analityk Ekonomiczny</title>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -14,60 +15,98 @@
     --text-muted: #64748b;
     --answer-bg: #161922;
     --source-bg: #1e2130;
+    --green: #34d399;
   }
 
   body { background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; min-height: 100vh; display: flex; flex-direction: column; }
 
-  header { padding: 24px 32px 16px; border-bottom: 1px solid var(--border); }
-  header h1 { font-size: 1.25rem; font-weight: 600; letter-spacing: -0.01em; }
-  header p { font-size: 0.8rem; color: var(--text-muted); margin-top: 4px; }
+  header { padding: 20px 32px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  .header-left h1 { font-size: 1.15rem; font-weight: 600; letter-spacing: -0.01em; }
+  .header-left p { font-size: 0.78rem; color: var(--text-muted); margin-top: 3px; }
+  .header-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  .conv-badge { font-size: 0.72rem; color: var(--text-muted); background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 3px 10px; display: none; }
+  .conv-badge.visible { display: inline-block; }
+  .reset-btn { font-size: 0.72rem; color: var(--text-muted); background: none; border: 1px solid var(--border); border-radius: 8px; padding: 4px 10px; cursor: pointer; transition: color 0.15s, border-color 0.15s; }
+  .reset-btn:hover { color: var(--text); border-color: var(--text-muted); }
 
-  .status-bar { font-size: 0.72rem; color: var(--text-muted); padding: 8px 32px; background: var(--surface); border-bottom: 1px solid var(--border); }
-  .status-bar span { color: var(--accent); }
+  .status-bar { font-size: 0.72rem; color: var(--text-muted); padding: 7px 32px; background: var(--surface); border-bottom: 1px solid var(--border); }
+  .status-bar span.ok { color: var(--green); }
+  .status-bar span.accent { color: var(--accent); }
 
-  main { flex: 1; max-width: 800px; width: 100%; margin: 0 auto; padding: 32px 24px; display: flex; flex-direction: column; gap: 24px; }
+  main { flex: 1; max-width: 800px; width: 100%; margin: 0 auto; padding: 28px 24px; display: flex; flex-direction: column; gap: 20px; }
 
   .examples { display: flex; flex-wrap: wrap; gap: 8px; }
-  .example-chip { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 6px 14px; font-size: 0.78rem; color: var(--text-muted); cursor: pointer; transition: border-color 0.15s, color 0.15s; }
+  .example-chip { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 5px 13px; font-size: 0.77rem; color: var(--text-muted); cursor: pointer; transition: border-color 0.15s, color 0.15s; }
   .example-chip:hover { border-color: var(--accent); color: var(--text); }
 
   .input-row { display: flex; gap: 10px; }
-  #question { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; color: var(--text); font-size: 0.95rem; outline: none; transition: border-color 0.15s; resize: none; min-height: 52px; }
+  #question { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 11px 15px; color: var(--text); font-size: 0.93rem; outline: none; transition: border-color 0.15s; resize: none; min-height: 50px; }
   #question:focus { border-color: var(--accent); }
-  button { background: var(--accent); color: #fff; border: none; border-radius: 10px; padding: 0 22px; font-size: 0.9rem; font-weight: 500; cursor: pointer; transition: opacity 0.15s; white-space: nowrap; }
-  button:hover { opacity: 0.85; }
-  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  #askBtn { background: var(--accent); color: #fff; border: none; border-radius: 10px; padding: 0 20px; font-size: 0.88rem; font-weight: 500; cursor: pointer; transition: opacity 0.15s; white-space: nowrap; min-width: 90px; }
+  #askBtn:hover { opacity: 0.85; }
+  #askBtn:disabled { opacity: 0.4; cursor: not-allowed; }
 
   #result { display: none; }
-  .answer-box { background: var(--answer-bg); border: 1px solid var(--border); border-radius: 12px; padding: 20px 22px; line-height: 1.65; font-size: 0.92rem; white-space: pre-wrap; }
-  .sources-label { font-size: 0.72rem; color: var(--text-muted); margin-top: 16px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.06em; }
-  .sources { display: flex; flex-direction: column; gap: 6px; }
-  .source-chip { background: var(--source-bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; font-size: 0.78rem; color: var(--text-muted); }
+
+  .answer-box {
+    background: var(--answer-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 22px;
+    line-height: 1.7;
+    font-size: 0.91rem;
+    min-height: 48px;
+  }
+
+  /* Markdown styles inside answer-box */
+  .answer-box p { margin-bottom: 0.75em; }
+  .answer-box p:last-child { margin-bottom: 0; }
+  .answer-box strong { color: #fff; font-weight: 600; }
+  .answer-box ul, .answer-box ol { padding-left: 1.4em; margin-bottom: 0.75em; }
+  .answer-box li { margin-bottom: 0.25em; }
+  .answer-box h3 { font-size: 0.95rem; font-weight: 600; margin: 0.8em 0 0.4em; color: #fff; }
+  .answer-box code { background: var(--surface); border-radius: 4px; padding: 1px 5px; font-size: 0.85em; }
+
+  .cursor { display: inline-block; width: 2px; height: 1em; background: var(--accent); animation: blink 0.9s step-end infinite; vertical-align: text-bottom; margin-left: 1px; }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  .sources-label { font-size: 0.7rem; color: var(--text-muted); margin-top: 14px; margin-bottom: 7px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .sources { display: flex; flex-direction: column; gap: 5px; }
+  .source-chip { background: var(--source-bg); border: 1px solid var(--border); border-radius: 8px; padding: 7px 12px; font-size: 0.77rem; color: var(--text-muted); }
   .source-chip a { color: var(--accent); text-decoration: none; }
   .source-chip a:hover { text-decoration: underline; }
   .source-chip .source-date { color: var(--text-muted); margin-left: 6px; }
 
-  .spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid var(--accent-dim); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 8px; }
+  .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid var(--accent-dim); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 7px; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  .error { color: #f87171; background: #1f1215; border: 1px solid #7f1d1d; border-radius: 10px; padding: 14px 16px; font-size: 0.88rem; }
+  .loading-text { color: var(--text-muted); font-size: 0.88rem; display: flex; align-items: center; }
 
-  footer { text-align: center; padding: 16px; font-size: 0.72rem; color: var(--text-muted); border-top: 1px solid var(--border); }
+  .error { color: #f87171; background: #1f1215; border: 1px solid #7f1d1d; border-radius: 10px; padding: 13px 16px; font-size: 0.87rem; }
+
+  footer { text-align: center; padding: 14px; font-size: 0.7rem; color: var(--text-muted); border-top: 1px solid var(--border); }
   footer a { color: var(--accent); text-decoration: none; }
 </style>
 
 <header>
-  <h1>Polish Economic Q&A</h1>
-  <p>Ask questions about NBP monetary policy and GUS economic statistics - powered by RAG over official documents</p>
+  <div class="header-left">
+    <h1>Polski Analityk Ekonomiczny</h1>
+    <p>RAG nad dokumentami NBP i GUS · inflacja · PKB · stopy procentowe · kursy walut</p>
+  </div>
+  <div class="header-right">
+    <span class="conv-badge" id="convBadge"></span>
+    <button class="reset-btn" id="resetBtn" onclick="resetConversation()">Nowa rozmowa</button>
+  </div>
 </header>
 
-<div class="status-bar" id="status">Checking database...</div>
+<div class="status-bar" id="status">Sprawdzam bazę...</div>
 
 <main>
   <div class="examples">
     <div class="example-chip" onclick="setQ(this)">Jaka była inflacja CPI w 2024 roku?</div>
     <div class="example-chip" onclick="setQ(this)">Kiedy RPP ostatnio zmieniła stopy procentowe?</div>
     <div class="example-chip" onclick="setQ(this)">Jaki był wzrost PKB w ostatnim kwartale?</div>
+    <div class="example-chip" onclick="setQ(this)">Jak kurs EUR/PLN zmienił się w ostatnich miesiącach?</div>
     <div class="example-chip" onclick="setQ(this)">Jak NBP uzasadnia bieżącą politykę monetarną?</div>
   </div>
 
@@ -80,34 +119,81 @@
 </main>
 
 <footer>
-  Data sources: <a href="https://www.nbp.pl" target="_blank">NBP</a> · <a href="https://stat.gus.gov.pl" target="_blank">GUS</a> · Documents updated periodically via ingestion pipeline
+  Źródła: <a href="https://www.nbp.pl" target="_blank">NBP</a> · <a href="https://stat.gov.pl" target="_blank">GUS</a> · dokumenty aktualizowane przez pipeline ingestion
 </footer>
 
 <script>
+marked.setOptions({ breaks: true });
+
+let conversationHistory = [];
+
 async function checkStatus() {
   try {
     const r = await fetch('/status');
     const d = await r.json();
     const bar = document.getElementById('status');
     if (d.ready) {
-      bar.innerHTML = `Database ready — <span>${d.documents_in_db} chunks</span> indexed`;
+      bar.innerHTML = `<span class="ok">●</span> Baza gotowa — <span class="accent">${d.documents_in_db} fragmentów</span> zaindeksowanych`;
     } else if (d.ingestion_running) {
-      bar.innerHTML = `<span class="spinner"></span>Indexing documents, please wait...`;
+      bar.innerHTML = `<span class="spinner"></span>Indeksuję dokumenty, proszę czekać...`;
       setTimeout(checkStatus, 5000);
     } else if (d.ingestion_error) {
-      bar.textContent = `Ingestion error: ${d.ingestion_error}`;
+      bar.textContent = `Błąd ingestion: ${d.ingestion_error}`;
     } else {
-      bar.textContent = 'Database empty — starting ingestion...';
+      bar.textContent = 'Baza pusta — uruchamiam ingestion...';
       setTimeout(checkStatus, 5000);
     }
   } catch(e) {
-    document.getElementById('status').textContent = 'Could not reach server';
+    document.getElementById('status').textContent = 'Nie można połączyć z serwerem';
   }
 }
 
 function setQ(el) {
   document.getElementById('question').value = el.textContent;
   document.getElementById('question').focus();
+}
+
+function resetConversation() {
+  conversationHistory = [];
+  updateConvBadge();
+  document.getElementById('result').style.display = 'none';
+  document.getElementById('result').innerHTML = '';
+}
+
+function updateConvBadge() {
+  const badge = document.getElementById('convBadge');
+  const turns = conversationHistory.length / 2;
+  if (turns > 0) {
+    badge.textContent = `${turns} ${turns === 1 ? 'wymiana' : turns < 5 ? 'wymiany' : 'wymian'}`;
+    badge.classList.add('visible');
+  } else {
+    badge.classList.remove('visible');
+  }
+}
+
+function normalizeUrl(url) {
+  if (!url) return url;
+  try {
+    const u = new URL(url);
+    u.searchParams.delete('contrast');
+    return u.toString();
+  } catch { return url; }
+}
+
+function buildSourcesHtml(sources) {
+  const unique = [];
+  const seen = new Set();
+  for (const s of sources) {
+    const key = normalizeUrl(s.url) || s.title || s.source;
+    if (!seen.has(key)) { seen.add(key); unique.push(s); }
+  }
+  if (!unique.length) return '';
+  const chips = unique.map(s => `
+    <div class="source-chip">
+      <strong>${esc(s.source)}</strong>${s.date ? `<span class="source-date">${esc(s.date)}</span>` : ''}
+      ${s.url ? ` — <a href="${esc(s.url)}" target="_blank">${esc(s.title || 'Link')}</a>` : (s.title ? ` — ${esc(s.title)}` : '')}
+    </div>`).join('');
+  return `<div class="sources-label">Źródła</div><div class="sources">${chips}</div>`;
 }
 
 document.getElementById('question').addEventListener('keydown', e => {
@@ -122,44 +208,76 @@ async function ask() {
   const result = document.getElementById('result');
   btn.disabled = true;
   result.style.display = 'block';
-  result.innerHTML = '<div class="answer-box"><span class="spinner"></span>Szukam w dokumentach...</div>';
+  result.innerHTML = '<div class="loading-text"><span class="spinner"></span>Szukam w dokumentach...</div>';
+
+  let answerText = '';
+  let sourcesHtml = '';
+  let gotSources = false;
 
   try {
-    const r = await fetch('/ask', {
+    const response = await fetch('/ask/stream', {
       method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ question: q })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question: q, history: conversationHistory })
     });
 
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    const d = await r.json();
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
-    const uniqueSources = [];
-    const seen = new Set();
-    for (const s of d.sources) {
-      const key = s.url || s.title;
-      if (!seen.has(key)) { seen.add(key); uniqueSources.push(s); }
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop();
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        let event;
+        try { event = JSON.parse(line.slice(6)); } catch { continue; }
+
+        if (event.type === 'sources') {
+          gotSources = true;
+          sourcesHtml = buildSourcesHtml(event.data);
+          result.innerHTML = `<div class="answer-box" id="answerBox"><span class="cursor"></span></div>${sourcesHtml}`;
+
+        } else if (event.type === 'token') {
+          if (!gotSources) {
+            gotSources = true;
+            result.innerHTML = `<div class="answer-box" id="answerBox"><span class="cursor"></span></div>`;
+          }
+          answerText += event.data;
+          const box = document.getElementById('answerBox');
+          if (box) box.innerHTML = marked.parse(answerText) + '<span class="cursor"></span>';
+
+        } else if (event.type === 'done') {
+          const box = document.getElementById('answerBox');
+          if (box) box.innerHTML = marked.parse(answerText);
+          conversationHistory.push({ role: 'user', content: q });
+          conversationHistory.push({ role: 'assistant', content: answerText });
+          if (conversationHistory.length > 12) conversationHistory = conversationHistory.slice(-12);
+          updateConvBadge();
+
+        } else if (event.type === 'error') {
+          result.innerHTML = `<div class="error">${esc(event.data)}</div>`;
+          return;
+        }
+      }
     }
-
-    const sourcesHtml = uniqueSources.map(s => `
-      <div class="source-chip">
-        <strong>${s.source}</strong>${s.date ? `<span class="source-date">${s.date}</span>` : ''}
-        ${s.url ? `— <a href="${s.url}" target="_blank">${s.title || 'Link'}</a>` : (s.title || '')}
-      </div>`).join('');
-
-    result.innerHTML = `
-      <div class="answer-box">${escHtml(d.answer)}</div>
-      ${uniqueSources.length ? `<div class="sources-label">Źródła</div><div class="sources">${sourcesHtml}</div>` : ''}
-    `;
   } catch(e) {
-    result.innerHTML = `<div class="error">Błąd: ${escHtml(e.message)}</div>`;
+    result.innerHTML = `<div class="error">Błąd: ${esc(e.message)}</div>`;
   } finally {
     btn.disabled = false;
   }
 }
 
-function escHtml(s) {
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+function esc(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 checkStatus();

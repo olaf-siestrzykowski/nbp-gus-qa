@@ -1,13 +1,14 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
 from pathlib import Path
 import threading
 import logging
+import json
 
-from app.rag import answer
+from app.rag import answer, stream_answer
 from app.vectorstore import collection_count
 
 logging.basicConfig(level=logging.INFO)
@@ -20,7 +21,7 @@ def _run_ingestion():
     _ingestion_status["running"] = True
     try:
         from ingestion.ingest import run
-        run()
+        run(embed_only=True)
         _ingestion_status["done"] = True
         logger.info("Background ingestion complete.")
     except Exception as e:
@@ -48,6 +49,7 @@ app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="static")
 
 class QuestionRequest(BaseModel):
     question: str
+    history: list[dict] = []
 
 
 class AnswerResponse(BaseModel):
@@ -64,8 +66,23 @@ def index():
 def ask(req: QuestionRequest):
     if not req.question.strip():
         raise HTTPException(status_code=400, detail="Pytanie nie może być puste.")
-    result = answer(req.question)
-    return result
+    return answer(req.question, req.history)
+
+
+@app.post("/ask/stream")
+def ask_stream(req: QuestionRequest):
+    if not req.question.strip():
+        raise HTTPException(status_code=400, detail="Pytanie nie może być puste.")
+
+    def generate():
+        for event_type, data in stream_answer(req.question, req.history):
+            yield f"data: {json.dumps({'type': event_type, 'data': data})}\n\n"
+
+    return StreamingResponse(
+        generate(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 @app.get("/status")
