@@ -2,6 +2,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -84,6 +85,9 @@
 
   .error { color: #f87171; background: #1f1215; border: 1px solid #7f1d1d; border-radius: 10px; padding: 13px 16px; font-size: 0.87rem; }
 
+  .chart-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; margin-top: 14px; }
+  .chart-wrap canvas { max-height: 280px; }
+
   footer { text-align: center; padding: 14px; font-size: 0.7rem; color: var(--text-muted); border-top: 1px solid var(--border); }
   footer a { color: var(--accent); text-decoration: none; }
 </style>
@@ -126,6 +130,52 @@
 marked.setOptions({ breaks: true });
 
 let conversationHistory = [];
+let activeChart = null;
+
+const CHART_COLORS = ['#4f8ef7', '#34d399', '#f59e0b', '#f87171'];
+
+function renderChart(cfg) {
+  const existing = document.getElementById('chartWrap');
+  if (existing) existing.remove();
+  if (activeChart) { activeChart.destroy(); activeChart = null; }
+
+  const wrap = document.createElement('div');
+  wrap.id = 'chartWrap';
+  wrap.className = 'chart-wrap';
+  const canvas = document.createElement('canvas');
+  wrap.appendChild(canvas);
+  document.getElementById('result').appendChild(wrap);
+
+  const datasets = (cfg.datasets || []).map((ds, i) => ({
+    label: ds.label || '',
+    data: ds.data,
+    borderColor: CHART_COLORS[i % CHART_COLORS.length],
+    backgroundColor: cfg.type === 'bar'
+      ? CHART_COLORS[i % CHART_COLORS.length] + '88'
+      : CHART_COLORS[i % CHART_COLORS.length] + '22',
+    borderWidth: 2,
+    pointRadius: cfg.type === 'line' ? 3 : 0,
+    tension: 0.35,
+    fill: cfg.type === 'line',
+  }));
+
+  activeChart = new Chart(canvas, {
+    type: cfg.type || 'line',
+    data: { labels: cfg.labels || [], datasets },
+    options: {
+      responsive: true,
+      animation: { duration: 400 },
+      plugins: {
+        title: { display: !!cfg.title, text: cfg.title || '', color: '#e2e8f0', font: { size: 13 } },
+        legend: { labels: { color: '#94a3b8', font: { size: 11 } } },
+      },
+      scales: {
+        x: { ticks: { color: '#64748b' }, grid: { color: '#2a2d3d' } },
+        y: { ticks: { color: '#64748b' }, grid: { color: '#2a2d3d' } },
+      },
+    },
+  });
+}
 
 async function checkStatus() {
   try {
@@ -156,6 +206,7 @@ function setQ(el) {
 function resetConversation() {
   conversationHistory = [];
   updateConvBadge();
+  if (activeChart) { activeChart.destroy(); activeChart = null; }
   document.getElementById('result').style.display = 'none';
   document.getElementById('result').innerHTML = '';
 }
@@ -207,6 +258,7 @@ async function ask() {
   const btn = document.getElementById('askBtn');
   const result = document.getElementById('result');
   btn.disabled = true;
+  if (activeChart) { activeChart.destroy(); activeChart = null; }
   result.style.display = 'block';
   result.innerHTML = '<div class="loading-text"><span class="spinner"></span>Szukam w dokumentach...</div>';
 
@@ -261,6 +313,9 @@ async function ask() {
           conversationHistory.push({ role: 'assistant', content: answerText });
           if (conversationHistory.length > 12) conversationHistory = conversationHistory.slice(-12);
           updateConvBadge();
+
+        } else if (event.type === 'chart') {
+          try { renderChart(event.data); } catch(e) { console.warn('Chart render failed', e); }
 
         } else if (event.type === 'error') {
           result.innerHTML = `<div class="error">${esc(event.data)}</div>`;

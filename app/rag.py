@@ -1,3 +1,5 @@
+import json
+import re
 from groq import Groq
 from app.vectorstore import query
 from app.config import settings
@@ -102,9 +104,88 @@ def stream_answer(question: str, history: list[dict] | None = None):
         stream=True,
     )
 
+    full_answer = []
     for chunk in stream:
         delta = chunk.choices[0].delta.content
         if delta:
+            full_answer.append(delta)
             yield "token", delta
 
     yield "done", None
+
+    chart = _extract_chart("".join(full_answer), context)
+    if chart:
+        yield "chart", chart
+
+
+_CHART_SYSTEM = """Jesteś asystentem który analizuje tekst ekonomiczny i generuje konfigurację wykresów.
+
+Jeśli odpowiedź zawiera dane numeryczne nadające się do wizualizacji (szeregi czasowe, porównania lat, trendy),
+zwróć obiekt JSON z konfiguracją Chart.js. W przeciwnym razie zwróć null.
+
+Format odpowiedzi — TYLKO czysty JSON (bez markdown, bez komentarzy):
+{
+  "type": "line" | "bar",
+  "title": "Tytuł wykresu",
+  "labels": ["2020", "2021", ...],
+  "datasets": [
+    {"label": "Seria danych", "data": [1.2, 3.4, ...]}
+  ]
+}
+
+Zasady:
+- Użyj "line" dla trendów/szeregów czasowych, "bar" dla porównań kategorii
+- Maksymalnie 2 datasety
+- labels to zazwyczaj lata lub miesiące
+- data to liczby (float/int), bez jednostek
+- Jeśli nie ma odpowiednich danych liczbowych → zwróć null
+"""
+
+
+def _extract_chart(answer: str, context: str) -> dict | None:
+    prompt = f"Odpowiedź analityka:\n{answer}\n\nDane kontekstowe (fragment):\n{context[:1500]}"
+    try:
+        resp = _get_client().chat.completions.create(
+            model="llama-3.1-8b-instant",
+            messages=[
+                {"role": "system", "content": _CHART_SYSTEM},
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0,
+            max_tokens=512,
+        )
+        raw = resp.choices[0].message.content.strip()
+        if raw.lower() == "null" or not raw:
+            return None
+        # Strip markdown fences if model added them
+        raw = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw, flags=re.MULTILINE).strip()
+        cfg = json.loads(raw)
+        return _sanitize_chart(cfg)
+    except Exception:
+        return None
+
+
+def _sanitize_chart(cfg: dict) -> dict | None:
+    """Remove trailing null/zero data points that the LLM may have hallucinated."""
+    if not isinstance(cfg, dict):
+        return None
+    datasets = cfg.get("datasets", [])
+    labels = cfg.get("labels", [])
+    if not datasets or not labels:
+        return cfg
+
+    # Find last index with a real value across all datasets
+    last_real = -1
+    for ds in datasets:
+        data = ds.get("data", [])
+        for i, v in enumerate(data):
+            if v is not None and v != 0:
+                last_real = max(last_real, i)
+
+    if last_real < 0:
+        return None
+
+    cfg["labels"] = labels[: last_real + 1]
+    for ds in datasets:
+        ds["data"] = ds["data"][: last_real + 1]
+    return cfg
