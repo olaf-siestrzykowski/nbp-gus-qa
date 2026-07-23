@@ -30,6 +30,7 @@ def scrape_all(nbp_limit: int = 20, gus_limit: int = 15) -> list[dict]:
     from ingestion.nbp_api import fetch_exchange_rates, fetch_reference_rate, fetch_gold_price
     from ingestion.nbp_scraper import scrape_rpp_communications, scrape_nbp_press_releases
     from ingestion.gus_scraper import scrape_gus
+    from ingestion.gus_bdl_api import fetch_all_bdl
 
     all_docs = []
     logger.info("--- NBP API: Exchange rates ---")
@@ -42,8 +43,10 @@ def scrape_all(nbp_limit: int = 20, gus_limit: int = 15) -> list[dict]:
     all_docs.extend(scrape_rpp_communications(limit=nbp_limit))
     logger.info("--- NBP: Press releases ---")
     all_docs.extend(scrape_nbp_press_releases(limit=10))
-    logger.info("--- GUS: Economic statistics ---")
+    logger.info("--- GUS: Economic statistics (scrapers) ---")
     all_docs.extend(scrape_gus(limit_per_source=gus_limit))
+    logger.info("--- GUS BDL API: CPI / wages / unemployment timeseries ---")
+    all_docs.extend(fetch_all_bdl())
     return all_docs
 
 

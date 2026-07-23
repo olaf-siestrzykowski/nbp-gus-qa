@@ -89,7 +89,7 @@ def fetch_reference_rate() -> list[dict]:
 
 def fetch_gold_price(last_n: int = 14) -> list[dict]:
     """Fetch gold price history from NBP API."""
-    url = f"{NBP_API}/cennik/zloto/ostatnie/{last_n}/?format=json"
+    url = f"{NBP_API}/cenyzlota/last/{last_n}/?format=json"
     data = _get(url)
     if not data:
         return []
