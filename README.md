@@ -4,15 +4,25 @@
 
 **[Live demo → nbp-gus-qa.onrender.com](https://nbp-gus-qa.onrender.com)**
 
-![Screenshot showing CPI answer with inline chart](docs/screenshot.png)
+---
+
+## Showcase
+
+| | |
+|---|---|
+| ![RPP interest rate hikes](docs/showcase/1_rpp_stopy.png) | ![Inflation by category](docs/showcase/2_inflacja_kategorie.png) |
+| *When did the MPC start raising rates?* | *Which categories drove inflation in 2022-2023?* |
+| ![Unemployment trend](docs/showcase/3_bezrobocie.png) | ![Current reference rate](docs/showcase/4_stopa_referencyjna.png) |
+| *How has unemployment changed?* | *Current NBP reference rate and latest MPC decision* |
+
+![CPI inflation peak](docs/showcase/5_inflacja_szczyt.png)
+*CPI inflation at the peak of the crisis*
 
 ---
 
 ## What it does
 
 Ask a question about the Polish economy. The app retrieves relevant document chunks from a vector database, passes them to an LLM with an analyst-style prompt, streams the response token-by-token, and then - if the answer contains time-series or comparable data - automatically generates an inline Chart.js visualisation.
-
-![Screenshot showing wages trend chart](docs/screenshot2.png)
 
 ---
 
