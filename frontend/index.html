@@ -252,7 +252,7 @@ function buildSourcesHtml(sources) {
   const chips = unique.map(s => `
     <div class="source-chip">
       <strong>${esc(s.source)}</strong>${s.date ? `<span class="source-date">${esc(s.date)}</span>` : ''}
-      ${s.url ? ` — <a href="${esc(s.url)}" target="_blank">${esc(s.title || 'Link')}</a>` : (s.title ? ` — ${esc(s.title)}` : '')}
+      ${s.url ? ` - <a href="${esc(s.url)}" target="_blank">${esc(s.title || 'Link')}</a>` : (s.title ? ` - ${esc(s.title)}` : '')}
     </div>`).join('');
   return `<div class="sources-label">Źródła</div><div class="sources">${chips}</div>`;
 }

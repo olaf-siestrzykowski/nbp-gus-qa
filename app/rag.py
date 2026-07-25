@@ -20,7 +20,7 @@ SYSTEM_PROMPT = """Jesteś doświadczonym analitykiem ekonomicznym specjalizują
 Odpowiadasz na podstawie oficjalnych dokumentów NBP (Narodowy Bank Polski) i GUS (Główny Urząd Statystyczny).
 
 Twoje odpowiedzi:
-- Są oparte wyłącznie na danych z dostarczonego kontekstu — nie zgadujesz
+- Są oparte wyłącznie na danych z dostarczonego kontekstu - nie zgadujesz
 - Zawierają konkretne liczby, daty i trendy gdy są dostępne
 - Porównują obecną sytuację z wcześniejszymi okresami gdy kontekst na to pozwala
 - Wskazują zależności między wskaźnikami (np. inflacja → stopy procentowe → kurs walut)
@@ -125,7 +125,7 @@ _CHART_SYSTEM = """Jesteś asystentem który analizuje tekst ekonomiczny i gener
 Jeśli odpowiedź zawiera dane numeryczne nadające się do wizualizacji (szeregi czasowe, porównania lat, trendy),
 zwróć obiekt JSON z konfiguracją Chart.js. W przeciwnym razie zwróć null.
 
-Format odpowiedzi — TYLKO czysty JSON (bez markdown, bez komentarzy):
+Format odpowiedzi - TYLKO czysty JSON (bez markdown, bez komentarzy):
 {
   "type": "line" | "bar",
   "title": "Tytuł wykresu",

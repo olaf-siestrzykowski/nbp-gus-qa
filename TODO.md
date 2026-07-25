@@ -13,11 +13,11 @@ Reframe: instead of generic Q&A, make it an **opinionated economic analyst** tha
 - Compares current data to historical periods ("similar to 2008", "worst since 1993")
 
 ### Data to add
-- [ ] Fix RPP scraper — NBP site behind Incapsula WAF (blocks all bots), needs Playwright or manual HTML fetch
-- [ ] NBP inflation reports (Raport o inflacji) — PDF scrape (also blocked by Incapsula)
-- [x] Historical CPI timeseries from GUS BDL API (bdl.stat.gov.pl/api/v1) — variable 217230, 2003-2025
-- [x] Employment / wages data (GUS BDL API) — variable 64428 (wages), 60270 (unemployment)
-- [x] NBP gold price — fixed endpoint: /api/cenyzlota/last/{n}/ (was /api/cennik/zloto/ which was removed)
+- [ ] Fix RPP scraper - NBP site behind Incapsula WAF (blocks all bots), needs Playwright or manual HTML fetch
+- [ ] NBP inflation reports (Raport o inflacji) - PDF scrape (also blocked by Incapsula)
+- [x] Historical CPI timeseries from GUS BDL API (bdl.stat.gov.pl/api/v1) - variable 217230, 2003-2025
+- [x] Employment / wages data (GUS BDL API) - variable 64428 (wages), 60270 (unemployment)
+- [x] NBP gold price - fixed endpoint: /api/cenyzlota/last/{n}/ (was /api/cennik/zloto/ which was removed)
 
 ### Features
 - [x] Chart generation: LLM extracts Chart.js config, rendered inline after answer

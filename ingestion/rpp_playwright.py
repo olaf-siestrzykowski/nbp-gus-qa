@@ -52,7 +52,7 @@ async def _collect_article_links(page) -> list[str]:
         all_links.update(links)
         logger.info(f"Page {page_num}: +{len(all_links) - before} links (total {len(all_links)})")
 
-        # Find "next" arrow button — disabled on last page
+        # Find "next" arrow button - disabled on last page
         next_btn = await page.query_selector("a.next.page-link:not([disabled])")
         if not next_btn:
             break
@@ -74,7 +74,7 @@ async def _collect_article_links(page) -> list[str]:
 async def scrape_rpp_playwright(limit: int = 20, year_filter: Optional[int] = None) -> list[dict]:
     """
     Scrape RPP press releases from nbp.pl using headed Chromium.
-    Must be run locally with a display — not on Render.
+    Must be run locally with a display - not on Render.
     """
     docs = []
 

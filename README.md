@@ -1,6 +1,6 @@
 # Polski Analityk Ekonomiczny
 
-**RAG-powered economic analyst** for Polish macroeconomic data — asks questions in Polish, answers with context, cites sources, and auto-generates charts from the data.
+**RAG-powered economic analyst** for Polish macroeconomic data - asks questions in Polish, answers with context, cites sources, and auto-generates charts from the data.
 
 **[Live demo → nbp-gus-qa.onrender.com](https://nbp-gus-qa.onrender.com)**
 
@@ -10,7 +10,7 @@
 
 ## What it does
 
-Ask a question about the Polish economy. The app retrieves relevant document chunks from a vector database, passes them to an LLM with an analyst-style prompt, streams the response token-by-token, and then — if the answer contains time-series or comparable data — automatically generates an inline Chart.js visualisation.
+Ask a question about the Polish economy. The app retrieves relevant document chunks from a vector database, passes them to an LLM with an analyst-style prompt, streams the response token-by-token, and then - if the answer contains time-series or comparable data - automatically generates an inline Chart.js visualisation.
 
 ![Screenshot showing wages trend chart](docs/screenshot2.png)
 
@@ -18,11 +18,11 @@ Ask a question about the Polish economy. The app retrieves relevant document chu
 
 ## Features
 
-- **Streaming responses** — SSE (Server-Sent Events) with live token streaming; no waiting for the full answer
-- **Inline chart generation** — a second LLM pass extracts Chart.js config from the answer and renders line/bar charts automatically
-- **Conversation history** — multi-turn follow-ups retain context (last 6 exchanges)
-- **Source attribution** — every answer cites the documents it drew from
-- **Markdown rendering** — bold numbers, bullet lists, headers rendered in the UI
+- **Streaming responses** - SSE (Server-Sent Events) with live token streaming; no waiting for the full answer
+- **Inline chart generation** - a second LLM pass extracts Chart.js config from the answer and renders line/bar charts automatically
+- **Conversation history** - multi-turn follow-ups retain context (last 6 exchanges)
+- **Source attribution** - every answer cites the documents it drew from
+- **Markdown rendering** - bold numbers, bullet lists, headers rendered in the UI
 
 ---
 
@@ -33,7 +33,7 @@ Ask a question about the Polish economy. The app retrieves relevant document chu
 | Backend | FastAPI, Python 3.11 |
 | Vector store | ChromaDB |
 | Embeddings | Jina AI API (`jina-embeddings-v3`) |
-| LLM | Groq — `llama-3.3-70b-versatile` (answer) + `llama-3.1-8b-instant` (chart extraction) |
+| LLM | Groq - `llama-3.3-70b-versatile` (answer) + `llama-3.1-8b-instant` (chart extraction) |
 | Deploy | Docker on Render free tier |
 | Frontend | Vanilla JS, Chart.js 4, marked.js |
 
@@ -47,7 +47,7 @@ Ask a question about the Polish economy. The app retrieves relevant document chu
 | **GUS BDL API** | CPI annual timeseries 2003–2025 (overall + 8 categories), average wages 2010–2024, unemployment rate 2010–2024 |
 | **GUS stat.gov.pl** | CPI flash estimates, quarterly GDP flash estimates (HTML scraping) |
 
-Data is pre-collected into `data/docs.json` and embedded on startup — Render's free tier can't reach Polish government domains, so scraping runs locally and the result is committed.
+Data is pre-collected into `data/docs.json` and embedded on startup - Render's free tier can't reach Polish government domains, so scraping runs locally and the result is committed.
 
 ---
 
@@ -109,7 +109,7 @@ ingestion/
   nbp_api.py       # NBP JSON API: exchange rates, gold price
   gus_bdl_api.py   # GUS BDL API: CPI timeseries, wages, unemployment
   gus_scraper.py   # GUS stat.gov.pl HTML scraper: CPI flash, GDP
-  nbp_scraper.py   # NBP scraper (RPP decisions — blocked by WAF in prod)
+  nbp_scraper.py   # NBP scraper (RPP decisions - blocked by WAF in prod)
   chunker.py       # Text chunking with overlap
 frontend/
   index.html       # Single-file UI: streaming, Chart.js, markdown

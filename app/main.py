@@ -35,10 +35,10 @@ def _run_ingestion():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     if collection_count() == 0:
-        logger.info("DB empty — starting background ingestion.")
+        logger.info("DB empty - starting background ingestion.")
         threading.Thread(target=_run_ingestion, daemon=True).start()
     else:
-        logger.info("DB already populated — skipping ingestion.")
+        logger.info("DB already populated - skipping ingestion.")
     yield
 
 

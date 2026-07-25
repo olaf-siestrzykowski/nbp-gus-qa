@@ -69,7 +69,7 @@ def fetch_cpi_timeseries() -> list[dict]:
     recent = {y: rows[y] for y in recent_years if y in rows}
 
     lines = [
-        "Wskaźnik cen towarów i usług konsumpcyjnych (CPI) — Polska",
+        "Wskaźnik cen towarów i usług konsumpcyjnych (CPI) - Polska",
         "Źródło: GUS Bank Danych Lokalnych",
         "Metodologia: rok poprzedni = 100 (wartość 105 oznacza inflację 5%)",
         "",
@@ -93,7 +93,7 @@ def fetch_cpi_timeseries() -> list[dict]:
 
     # One combined doc with all CPI categories
     cat_lines = [
-        "Składowe inflacji CPI według kategorii — Polska (rok poprzedni = 100)",
+        "Składowe inflacji CPI według kategorii - Polska (rok poprzedni = 100)",
         "Źródło: GUS Bank Danych Lokalnych",
         "",
     ]
@@ -109,7 +109,7 @@ def fetch_cpi_timeseries() -> list[dict]:
         "text": "\n".join(cat_lines),
         "metadata": {
             "source": "GUS BDL - CPI kategorie",
-            "title": "Inflacja CPI Polska — składowe (żywność, mieszkanie, transport...)",
+            "title": "Inflacja CPI Polska - składowe (żywność, mieszkanie, transport...)",
             "date": "2025",
             "url": "https://bdl.stat.gov.pl",
             "type": "cpi_categories",
@@ -142,7 +142,7 @@ def fetch_wages_timeseries() -> list[dict]:
             growth_lines.append(f"  {y}: {rows[y]:.0f} PLN")
 
     text = "\n".join([
-        "Przeciętne miesięczne wynagrodzenia brutto — Polska",
+        "Przeciętne miesięczne wynagrodzenia brutto - Polska",
         "Źródło: GUS Bank Danych Lokalnych",
         "Jednostka: PLN (złotych) brutto",
         "",
@@ -178,7 +178,7 @@ def fetch_unemployment_timeseries() -> list[dict]:
     min_year = min(rows, key=rows.get)
 
     text = "\n".join([
-        "Stopa bezrobocia rejestrowanego — Polska",
+        "Stopa bezrobocia rejestrowanego - Polska",
         "Źródło: GUS Bank Danych Lokalnych",
         "Jednostka: % (procent)",
         "",
