@@ -7,6 +7,8 @@ Run locally with a display (DISPLAY or WAYLAND_DISPLAY set), then push docs.json
 import asyncio
 import logging
 import re
+from typing import Optional
+
 from playwright.async_api import async_playwright
 from playwright_stealth import Stealth
 
@@ -69,7 +71,7 @@ async def _collect_article_links(page) -> list[str]:
     return list(all_links)
 
 
-async def scrape_rpp_playwright(limit: int = 20, year_filter: int = None) -> list[dict]:
+async def scrape_rpp_playwright(limit: int = 20, year_filter: Optional[int] = None) -> list[dict]:
     """
     Scrape RPP press releases from nbp.pl using headed Chromium.
     Must be run locally with a display — not on Render.
