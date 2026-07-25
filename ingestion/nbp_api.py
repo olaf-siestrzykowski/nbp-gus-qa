@@ -4,10 +4,9 @@ Endpoints: https://api.nbp.pl/
 Covers: exchange rates, reference interest rates, CPI data from NBP.
 """
 
-import requests
-import json
 import logging
-from datetime import datetime, timedelta
+
+import requests
 
 logger = logging.getLogger(__name__)
 

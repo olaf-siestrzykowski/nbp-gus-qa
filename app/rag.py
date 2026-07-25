@@ -1,8 +1,10 @@
 import json
 import re
+
 from groq import Groq
-from app.vectorstore import query
+
 from app.config import settings
+from app.vectorstore import query
 
 _client = None
 

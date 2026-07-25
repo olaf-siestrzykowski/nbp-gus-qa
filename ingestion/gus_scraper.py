@@ -5,12 +5,13 @@ Scraper for GUS (Główny Urząd Statystyczny) press releases:
 - GDP flash estimates
 """
 
+import io
+import logging
+import re
+
+import pdfplumber
 import requests
 from bs4 import BeautifulSoup
-import pdfplumber
-import io
-import re
-import logging
 
 logger = logging.getLogger(__name__)
 

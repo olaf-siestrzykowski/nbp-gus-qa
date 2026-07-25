@@ -4,13 +4,14 @@ Scraper for NBP (Narodowy Bank Polski) press releases:
 - Inflation reports summaries
 """
 
+import io
+import logging
+import re
+from datetime import datetime
+
+import pdfplumber
 import requests
 from bs4 import BeautifulSoup
-import pdfplumber
-import io
-import re
-import logging
-from datetime import datetime
 
 logger = logging.getLogger(__name__)
 

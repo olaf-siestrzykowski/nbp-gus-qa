@@ -4,8 +4,9 @@ Fetches structured historical timeseries: CPI, wages, unemployment.
 API docs: https://bdl.stat.gov.pl/api/v1/
 """
 
-import requests
 import logging
+
+import requests
 
 logger = logging.getLogger(__name__)
 
@@ -76,7 +77,7 @@ def fetch_cpi_timeseries() -> list[dict]:
         _vals_to_table(overall),
         "",
         f"Szczyt inflacji: {peak_year} ({rows[peak_year]})",
-        f"Ostatnie 5 lat: " + ", ".join(f"{y}: {rows[y]}" for y in recent_years if y in rows),
+        "Ostatnie 5 lat: " + ", ".join(f"{y}: {rows[y]}" for y in recent_years if y in rows),
     ]
 
     docs.append({

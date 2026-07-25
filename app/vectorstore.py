@@ -1,8 +1,10 @@
-import chromadb
-from chromadb.config import Settings as ChromaSettings
-import requests
-from app.config import settings
 import logging
+
+import chromadb
+import requests
+from chromadb.config import Settings as ChromaSettings
+
+from app.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +50,7 @@ def add_documents(chunks: list[dict]) -> int:
     return len(chunks)
 
 
-def query(text: str, top_k: int = None) -> list[dict]:
+def query(text: str, top_k: int | None = None) -> list[dict]:
     k = top_k or settings.top_k
     collection = _get_collection()
     embedding = _embed([text], task="retrieval.query")[0]

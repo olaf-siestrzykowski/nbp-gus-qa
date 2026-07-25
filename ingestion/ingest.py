@@ -9,16 +9,16 @@ Production (Render) uses --embed mode from pre-committed docs.json.
 Run without --embed locally to refresh the data, then commit data/docs.json.
 """
 
-import sys
 import json
 import logging
+import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from ingestion.chunker import chunk_text
-from app.vectorstore import add_documents, collection_count
 from app.config import settings
+from app.vectorstore import add_documents, collection_count
+from ingestion.chunker import chunk_text
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
@@ -27,10 +27,17 @@ DOCS_FILE = Path(settings.chroma_path).parent / "docs.json"
 
 
 def scrape_all(nbp_limit: int = 20, gus_limit: int = 15) -> list[dict]:
-    from ingestion.nbp_api import fetch_exchange_rates, fetch_reference_rate, fetch_gold_price
-    from ingestion.nbp_scraper import scrape_rpp_communications, scrape_nbp_press_releases
-    from ingestion.gus_scraper import scrape_gus
     from ingestion.gus_bdl_api import fetch_all_bdl
+    from ingestion.gus_scraper import scrape_gus
+    from ingestion.nbp_api import (
+        fetch_exchange_rates,
+        fetch_gold_price,
+        fetch_reference_rate,
+    )
+    from ingestion.nbp_scraper import (
+        scrape_nbp_press_releases,
+        scrape_rpp_communications,
+    )
 
     all_docs = []
     logger.info("--- NBP API: Exchange rates ---")
