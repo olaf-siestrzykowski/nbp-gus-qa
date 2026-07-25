@@ -7,4 +7,5 @@ __pycache__/
 .DS_Store
 .playwright-mcp/
 *.png
+!docs/**/*.png
 # data/docs.json is intentionally tracked (pre-collected for production)
