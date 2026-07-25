@@ -1,0 +1,12 @@
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "RUF"]
+ignore = [
+    "BLE001",  # broad exception catch — intentional in background threads/scrapers
+    "DTZ005",  # datetime.now() without tz — acceptable for year extraction
+]
+
+[tool.ruff.lint.per-file-ignores]
+"ingestion/*" = ["F841", "E501"]  # unused vars; long URLs/strings in scrapers are unavoidable

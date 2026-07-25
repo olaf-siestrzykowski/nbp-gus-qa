@@ -1,0 +1,10 @@
+.env
+.venv/
+data/chroma/
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store
+.playwright-mcp/
+*.png
+# data/docs.json is intentionally tracked (pre-collected for production)
