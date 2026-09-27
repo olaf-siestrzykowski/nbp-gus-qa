@@ -79,3 +79,10 @@ def test_ask_stream_returns_sse_events(client):
     body = resp.text
     assert "token" in body
     assert "done" in body
+
+
+def test_ask_returns_502_when_llm_fails(client):
+    with patch("app.main.answer", side_effect=RuntimeError("model_decommissioned")):
+        resp = client.post("/ask", json={"question": "inflacja?"})
+    assert resp.status_code == 502
+    assert "niedostępny" in resp.json()["detail"]

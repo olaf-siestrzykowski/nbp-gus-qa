@@ -1,10 +1,15 @@
 import json
+import logging
 import re
 
 from groq import Groq
 
 from app.config import settings
 from app.vectorstore import query
+
+logger = logging.getLogger(__name__)
+
+LLM_ERROR_MESSAGE = "Model językowy jest chwilowo niedostępny. Spróbuj ponownie za chwilę."
 
 _client = None
 
@@ -24,6 +29,9 @@ Dane CPI z GUS BDL używają skali "rok poprzedni = 100":
 - wartość 114.4 oznacza inflację 14,4% (wzrost cen o 14,4% rok do roku)
 - wartość 100.0 oznacza brak zmiany (inflacja 0%)
 - wartość 98.5 oznacza deflację 1,5%
+Każda roczna wartość to już gotowa inflacja dla tego roku (wartość - 100).
+NIE odejmuj od siebie wartości z kolejnych lat - np. 2020: 103.4 i 2021: 105.1
+oznaczają inflację 3,4% w 2020 i 5,1% w 2021 (a nie 1,7%).
 Zawsze przeliczaj i podawaj wynik jako procent zmiany (np. "inflacja wyniosła 14,4%").
 Nigdy nie cytuj surowej wartości indeksu (np. "114,4%") jako poziomu inflacji.
 
@@ -81,7 +89,7 @@ def answer(question: str, history: list[dict] | None = None) -> dict:
         model=settings.groq_model,
         messages=messages,
         temperature=0.3,
-        max_tokens=1024,
+        max_tokens=2048,
     )
 
     return {"answer": response.choices[0].message.content, "sources": sources}
@@ -106,20 +114,25 @@ def stream_answer(question: str, history: list[dict] | None = None):
         "content": f"Kontekst z bazy wiedzy:\n{context}\n\nPytanie: {question}",
     })
 
-    stream = _get_client().chat.completions.create(
-        model=settings.groq_model,
-        messages=messages,
-        temperature=0.3,
-        max_tokens=1024,
-        stream=True,
-    )
-
     full_answer = []
-    for chunk in stream:
-        delta = chunk.choices[0].delta.content
-        if delta:
-            full_answer.append(delta)
-            yield "token", delta
+    try:
+        stream = _get_client().chat.completions.create(
+            model=settings.groq_model,
+            messages=messages,
+            temperature=0.3,
+            max_tokens=2048,
+            stream=True,
+        )
+        for chunk in stream:
+            delta = chunk.choices[0].delta.content
+            if delta:
+                full_answer.append(delta)
+                yield "token", delta
+    except Exception:
+        # Without this the SSE stream just stops after "sources" and the UI hangs silently
+        logger.exception("LLM streaming failed (model=%s)", settings.groq_model)
+        yield "error", LLM_ERROR_MESSAGE
+        return
 
     yield "done", None
 
@@ -148,6 +161,8 @@ Zasady:
 - Maksymalnie 2 datasety
 - labels to zazwyczaj lata lub miesiące
 - data to liczby (float/int), bez jednostek
+- Bierz liczby z odpowiedzi analityka, nie z surowego kontekstu. Indeks CPI "rok poprzedni = 100"
+  zamieniaj na procent (114.4 → 14.4), nigdy nie wstawiaj surowej wartości indeksu
 - Jeśli nie ma odpowiednich danych liczbowych → zwróć null
 """
 
@@ -156,13 +171,13 @@ def _extract_chart(answer: str, context: str) -> dict | None:
     prompt = f"Odpowiedź analityka:\n{answer}\n\nDane kontekstowe (fragment):\n{context[:1500]}"
     try:
         resp = _get_client().chat.completions.create(
-            model="llama-3.1-8b-instant",
+            model=settings.groq_chart_model,
             messages=[
                 {"role": "system", "content": _CHART_SYSTEM},
                 {"role": "user", "content": prompt},
             ],
             temperature=0,
-            max_tokens=512,
+            max_tokens=1024,
         )
         raw = resp.choices[0].message.content.strip()
         if raw.lower() == "null" or not raw:
@@ -172,6 +187,7 @@ def _extract_chart(answer: str, context: str) -> dict | None:
         cfg = json.loads(raw)
         return _sanitize_chart(cfg)
     except Exception:
+        logger.warning("Chart extraction failed (model=%s)", settings.groq_chart_model, exc_info=True)
         return None
 
 

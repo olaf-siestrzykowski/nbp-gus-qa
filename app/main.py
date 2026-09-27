@@ -9,7 +9,8 @@ from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from app.rag import answer, stream_answer
+from app.config import settings
+from app.rag import LLM_ERROR_MESSAGE, answer, stream_answer
 from app.vectorstore import collection_count
 
 logging.basicConfig(level=logging.INFO)
@@ -67,7 +68,11 @@ def index():
 def ask(req: QuestionRequest):
     if not req.question.strip():
         raise HTTPException(status_code=400, detail="Pytanie nie może być puste.")
-    return answer(req.question, req.history)
+    try:
+        return answer(req.question, req.history)
+    except Exception:
+        logger.exception("LLM call failed (model=%s)", settings.groq_model)
+        raise HTTPException(status_code=502, detail=LLM_ERROR_MESSAGE)
 
 
 @app.post("/ask/stream")

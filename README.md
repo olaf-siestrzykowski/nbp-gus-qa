@@ -43,7 +43,7 @@ Ask a question about the Polish economy. The app retrieves relevant document chu
 | Backend | FastAPI, Python 3.11 |
 | Vector store | ChromaDB |
 | Embeddings | Jina AI API (`jina-embeddings-v3`) |
-| LLM | Groq - `llama-3.3-70b-versatile` (answer) + `llama-3.1-8b-instant` (chart extraction) |
+| LLM | Groq - `openai/gpt-oss-120b` for both the answer and the chart-extraction pass (overridable via `GROQ_MODEL` / `GROQ_CHART_MODEL`) |
 | Deploy | Docker on Render free tier |
 | Frontend | Vanilla JS, Chart.js 4, marked.js |
 
@@ -70,13 +70,13 @@ User question
 ChromaDB vector search  ←── Jina AI embeddings (query)
      │  top-5 chunks
      ▼
-Groq llama-3.3-70b  ──── analyst system prompt + context
+Groq gpt-oss-120b  ──── analyst system prompt + context
      │  SSE token stream
      ▼
 Frontend (marked.js render)
      │  after "done" event
      ▼
-Groq llama-3.1-8b  ──── extract Chart.js config from answer
+Groq gpt-oss-120b  ──── extract Chart.js config from answer
      │  "chart" SSE event
      ▼
 Chart.js render

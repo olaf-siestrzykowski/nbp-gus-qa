@@ -96,3 +96,22 @@ class TestBuildContext:
         assert sources[0]["source"] == ""
         assert sources[0]["title"] == ""
         assert "Nieznane" in context
+
+
+class TestStreamAnswerErrors:
+    def test_llm_failure_yields_error_event_after_sources(self):
+        from unittest.mock import MagicMock, patch
+
+        from app import rag
+
+        chunk = {
+            "text": "CPI 2022: 114.4",
+            "metadata": {"title": "GUS CPI", "source": "GUS", "date": "2022", "url": ""},
+        }
+        client = MagicMock()
+        client.chat.completions.create.side_effect = RuntimeError("model_decommissioned")
+        with patch("app.rag.query", return_value=[chunk]), patch("app.rag._get_client", return_value=client):
+            events = list(rag.stream_answer("inflacja 2022?"))
+
+        assert [e[0] for e in events] == ["sources", "error"]
+        assert events[-1][1] == rag.LLM_ERROR_MESSAGE
