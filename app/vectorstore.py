@@ -1,4 +1,5 @@
 import logging
+import time
 
 import chromadb
 import requests
@@ -29,15 +30,26 @@ def _get_collection():
     return _collection
 
 
-def _embed(texts: list[str], task: str) -> list[list[float]]:
-    response = requests.post(
-        JINA_API,
-        headers={"Authorization": f"Bearer {settings.jina_api_key}"},
-        json={"model": JINA_MODEL, "input": texts, "task": task},
-        timeout=60,
-    )
-    response.raise_for_status()
-    return [item["embedding"] for item in response.json()["data"]]
+def _embed(texts: list[str], task: str, max_retries: int = 6) -> list[list[float]]:
+    delay = 10.0
+    for attempt in range(max_retries):
+        response = requests.post(
+            JINA_API,
+            headers={"Authorization": f"Bearer {settings.jina_api_key}"},
+            json={"model": JINA_MODEL, "input": texts, "task": task},
+            timeout=60,
+        )
+        # Startup re-embeds all ~500 chunks in a few large requests, which can hit
+        # Jina's per-minute limit - wait instead of leaving the index half-built
+        if response.status_code in (429, 503) and attempt < max_retries - 1:
+            wait = float(response.headers.get("Retry-After") or delay)
+            logger.warning("Jina %s, retrying in %.0fs (%d/%d)", response.status_code, wait, attempt + 1, max_retries)
+            time.sleep(wait)
+            delay = min(delay * 2, 60)
+            continue
+        response.raise_for_status()
+        return [item["embedding"] for item in response.json()["data"]]
+    raise RuntimeError("unreachable")
 
 
 def add_documents(chunks: list[dict]) -> int:
@@ -62,6 +74,17 @@ def query(text: str, top_k: int | None = None) -> list[dict]:
             "distance": results["distances"][0][i],
         }
         for i, doc in enumerate(results["documents"][0])
+    ]
+
+
+def get_by_source(sources: list[str]) -> list[dict]:
+    """All chunks from the given sources (metadata "source"), without vector search."""
+    if not sources:
+        return []
+    results = _get_collection().get(where={"source": {"$in": sources}})
+    return [
+        {"text": doc, "metadata": results["metadatas"][i], "distance": 0.0}
+        for i, doc in enumerate(results["documents"])
     ]
 
 

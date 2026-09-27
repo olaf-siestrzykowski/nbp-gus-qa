@@ -2,10 +2,10 @@ import json
 import logging
 import re
 
-from groq import Groq
+from groq import Groq, NotFoundError, RateLimitError
 
 from app.config import settings
-from app.vectorstore import query
+from app.vectorstore import get_by_source, query
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +19,25 @@ def _get_client() -> Groq:
     if _client is None:
         _client = Groq(api_key=settings.groq_api_key)
     return _client
+
+
+def _needs_fallback(error: Exception) -> bool:
+    """Daily quota used up, or the model was retired - a short burst limit is not enough."""
+    if isinstance(error, NotFoundError):
+        return True
+    return isinstance(error, RateLimitError) and "per day" in str(error)
+
+
+def _complete(model: str, **kwargs):
+    """chat.completions.create with a one-step fallback to settings.groq_fallback_model."""
+    try:
+        return _get_client().chat.completions.create(model=model, **kwargs)
+    except (RateLimitError, NotFoundError) as e:
+        fallback = settings.groq_fallback_model
+        if not fallback or fallback == model or not _needs_fallback(e):
+            raise
+        logger.warning("Model %s unavailable (%s) - falling back to %s", model, type(e).__name__, fallback)
+        return _get_client().chat.completions.create(model=fallback, **kwargs)
 
 
 SYSTEM_PROMPT = """Jesteś doświadczonym analitykiem ekonomicznym specjalizującym się w polskiej gospodarce.
@@ -66,8 +85,35 @@ def _build_context(chunks: list[dict]) -> tuple[str, list[dict]]:
     return context, sources
 
 
+# Each time series (CPI, wages, unemployment...) is a single chunk among ~500 mostly
+# exchange-rate tables and MPC statements, and vector search often misses it: in the
+# eval (eval/REPORT.md) the right table was not even in the top 10. When the question
+# names one of these indicators, the table is added to the context directly and vector
+# search fills the rest.
+ROUTES = {
+    "GUS BDL - CPI": r"inflacj|\bcpi\b|ceny? (?:towarów|konsument)|wzrost cen",
+    "GUS BDL - CPI kategorie": (r"żywnoś|transport|odzież|obuw|zdrowi|rekreac|edukac|alkohol|tyto"
+                                r"|nośnik\w* energii|użytkowani\w* mieszka|składow|kategori"),
+    "GUS BDL - Bezrobocie": r"bezroboc",
+    "GUS BDL - Wynagrodzenia": r"wynagrodz|płac|pensj|zarob",
+    "NBP API - Ceny złota": r"\bzłot(?:o|a|em)\b",
+}
+
+
+def _route(question: str) -> list[str]:
+    q = question.lower()
+    return [source for source, pattern in ROUTES.items() if re.search(pattern, q)]
+
+
+def retrieve(question: str) -> list[dict]:
+    """Routed indicator tables first, then vector search results (deduplicated)."""
+    routed = get_by_source(_route(question))
+    seen = {c["text"] for c in routed}
+    return routed + [c for c in query(question) if c["text"] not in seen]
+
+
 def answer(question: str, history: list[dict] | None = None) -> dict:
-    chunks = query(question)
+    chunks = retrieve(question)
 
     if not chunks:
         return {
@@ -85,8 +131,8 @@ def answer(question: str, history: list[dict] | None = None) -> dict:
         "content": f"Kontekst z bazy wiedzy:\n{context}\n\nPytanie: {question}",
     })
 
-    response = _get_client().chat.completions.create(
-        model=settings.groq_model,
+    response = _complete(
+        settings.groq_model,
         messages=messages,
         temperature=0.3,
         max_tokens=2048,
@@ -97,7 +143,7 @@ def answer(question: str, history: list[dict] | None = None) -> dict:
 
 def stream_answer(question: str, history: list[dict] | None = None):
     """Generator yielding (event_type, data) tuples for SSE streaming."""
-    chunks = query(question)
+    chunks = retrieve(question)
 
     if not chunks:
         yield "error", "Brak dokumentów w bazie."
@@ -116,8 +162,8 @@ def stream_answer(question: str, history: list[dict] | None = None):
 
     full_answer = []
     try:
-        stream = _get_client().chat.completions.create(
-            model=settings.groq_model,
+        stream = _complete(
+            settings.groq_model,
             messages=messages,
             temperature=0.3,
             max_tokens=2048,
@@ -170,8 +216,8 @@ Zasady:
 def _extract_chart(answer: str, context: str) -> dict | None:
     prompt = f"Odpowiedź analityka:\n{answer}\n\nDane kontekstowe (fragment):\n{context[:1500]}"
     try:
-        resp = _get_client().chat.completions.create(
-            model=settings.groq_chart_model,
+        resp = _complete(
+            settings.groq_chart_model,
             messages=[
                 {"role": "system", "content": _CHART_SYSTEM},
                 {"role": "user", "content": prompt},

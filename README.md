@@ -84,6 +84,46 @@ Chart.js render
 
 ---
 
+## Evaluation
+
+`python -m eval.run_eval` asks 26 questions whose answers are **computed from
+`data/docs.json`**, not typed by hand (CPI, unemployment and wages by year, CPI
+categories, NBP reference rate after given MPC meetings, peak years), plus questions
+the data cannot answer. It measures whether the right source was retrieved, whether
+the expected number is in the answer, and whether the model refuses instead of
+guessing. Results: [`eval/REPORT.md`](eval/REPORT.md).
+
+| | Retrieval hit | Answer correct | Refused when it should |
+|---|---|---|---|
+| Vector search only ([baseline](eval/REPORT_before_routing.md)) | 19/22 | 19/22 | 3/4* |
+| With indicator routing (current) | **22/22** | **22/22** | **3/3** |
+
+\* the 4th was a refusal phrased "Brak dostępnych danych", missed by the first
+version of the checker. Current run: one question got no answer because the Groq
+daily quota ran out and is reported separately, not counted as wrong.
+
+In the baseline every wrong answer came from retrieval, not the model: it got the
+wrong documents and said it had no data rather than inventing a number.
+
+## Design decisions
+
+- **Routing for time series, vector search for text.** Each indicator table (CPI,
+  wages, unemployment, CPI categories, gold) is one chunk among ~500, most of them
+  near-identical exchange-rate tables and MPC statements. Vector search regularly
+  missed the table even in the top 10, so questions naming an indicator get that
+  table added to the context directly (`app/rag.py`, `ROUTES`); vector search fills
+  the rest. MPC statements, where wording matters, stay with vector search.
+- **Numbers are converted in the prompt, and checked by the eval.** GUS publishes CPI
+  as "previous year = 100"; the prompt spells out the conversion (114.4 → 14.4%)
+  after the model once subtracted consecutive years.
+- **Graceful degradation on free tiers.** Groq retires models and has per-model
+  daily quotas. When the main model hits its daily quota or is retired, the app
+  falls back to `GROQ_FALLBACK_MODEL`; if that fails too, the UI shows an error
+  instead of an empty stream.
+- **Committed data snapshot.** Render's free tier cannot reach Polish government
+  sites, so `data/docs.json` is scraped locally and committed; answers are only as
+  fresh as the snapshot.
+
 ## Local setup
 
 ```bash
@@ -111,7 +151,7 @@ uvicorn app.main:app --reload
 ```
 app/
   main.py          # FastAPI routes, SSE streaming endpoint
-  rag.py           # RAG pipeline: retrieval, LLM call, chart extraction
+  rag.py           # RAG pipeline: indicator routing + retrieval, LLM call with fallback, charts
   vectorstore.py   # ChromaDB client
   config.py        # Settings (pydantic-settings)
 ingestion/
@@ -124,5 +164,8 @@ ingestion/
 frontend/
   index.html       # Single-file UI: streaming, Chart.js, markdown
 data/
-  docs.json        # Pre-collected documents (103 docs / 422 chunks)
+  docs.json        # Pre-collected documents (158 docs / 513 chunks)
+eval/
+  run_eval.py      # Golden questions computed from docs.json, retrieval/answer/refusal metrics
+  REPORT.md        # Latest results (REPORT_before_routing.md: vector search only)
 ```
