@@ -96,7 +96,8 @@ def status():
     count = collection_count()
     return {
         "documents_in_db": count,
-        "ready": count > 0,
+        # Not ready while the index is still being (re)built or if building it failed
+        "ready": count > 0 and not _ingestion_status["running"] and _ingestion_status["error"] is None,
         "ingestion_running": _ingestion_status["running"],
         "ingestion_error": _ingestion_status["error"],
     }

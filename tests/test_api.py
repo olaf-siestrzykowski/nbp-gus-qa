@@ -86,3 +86,14 @@ def test_ask_returns_502_when_llm_fails(client):
         resp = client.post("/ask", json={"question": "inflacja?"})
     assert resp.status_code == 502
     assert "niedostępny" in resp.json()["detail"]
+
+
+def test_status_not_ready_while_ingestion_runs_or_failed(client):
+    from app import main
+
+    with patch("app.main.collection_count", return_value=100), \
+         patch.dict(main._ingestion_status, {"running": True, "error": None}):
+        assert client.get("/status").json()["ready"] is False
+    with patch("app.main.collection_count", return_value=100), \
+         patch.dict(main._ingestion_status, {"running": False, "error": "429 Too Many Requests"}):
+        assert client.get("/status").json()["ready"] is False

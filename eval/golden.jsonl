@@ -1,0 +1,26 @@
+{"category": "cpi_year", "source": "GUS BDL - CPI", "question": "Jaka była inflacja CPI w Polsce w 2012 roku?", "expected": 3.7, "tolerance": 0.05}
+{"category": "cpi_year", "source": "GUS BDL - CPI", "question": "Jaka była inflacja CPI w Polsce w 2015 roku?", "expected": -0.9, "tolerance": 0.05}
+{"category": "cpi_year", "source": "GUS BDL - CPI", "question": "Jaka była inflacja CPI w Polsce w 2019 roku?", "expected": 2.3, "tolerance": 0.05}
+{"category": "cpi_year", "source": "GUS BDL - CPI", "question": "Jaka była inflacja CPI w Polsce w 2021 roku?", "expected": 5.1, "tolerance": 0.05}
+{"category": "cpi_year", "source": "GUS BDL - CPI", "question": "Jaka była inflacja CPI w Polsce w 2022 roku?", "expected": 14.4, "tolerance": 0.05}
+{"category": "cpi_year", "source": "GUS BDL - CPI", "question": "Jaka była inflacja CPI w Polsce w 2023 roku?", "expected": 11.4, "tolerance": 0.05}
+{"category": "cpi_year", "source": "GUS BDL - CPI", "question": "Jaka była inflacja CPI w Polsce w 2024 roku?", "expected": 3.6, "tolerance": 0.05}
+{"category": "trend", "source": "GUS BDL - CPI", "question": "W którym roku w latach 2010-2025 inflacja CPI w Polsce była najwyższa?", "expected_year": 2022}
+{"category": "unemployment_year", "source": "GUS BDL - Bezrobocie", "question": "Ile wynosiła stopa bezrobocia rejestrowanego w Polsce w 2013 roku?", "expected": 13.4, "tolerance": 0.05}
+{"category": "unemployment_year", "source": "GUS BDL - Bezrobocie", "question": "Ile wynosiła stopa bezrobocia rejestrowanego w Polsce w 2019 roku?", "expected": 5.2, "tolerance": 0.05}
+{"category": "unemployment_year", "source": "GUS BDL - Bezrobocie", "question": "Ile wynosiła stopa bezrobocia rejestrowanego w Polsce w 2023 roku?", "expected": 5.1, "tolerance": 0.05}
+{"category": "unemployment_year", "source": "GUS BDL - Bezrobocie", "question": "Ile wynosiła stopa bezrobocia rejestrowanego w Polsce w 2025 roku?", "expected": 5.7, "tolerance": 0.05}
+{"category": "trend", "source": "GUS BDL - Bezrobocie", "question": "W którym roku w latach 2010-2025 bezrobocie w Polsce było najwyższe?", "expected_year": 2012}
+{"category": "wages_year", "source": "GUS BDL - Wynagrodzenia", "question": "Ile wynosiło przeciętne miesięczne wynagrodzenie brutto w Polsce w 2015 roku?", "expected": 4151.0, "tolerance": 1.0}
+{"category": "wages_year", "source": "GUS BDL - Wynagrodzenia", "question": "Ile wynosiło przeciętne miesięczne wynagrodzenie brutto w Polsce w 2020 roku?", "expected": 5523.0, "tolerance": 1.0}
+{"category": "wages_year", "source": "GUS BDL - Wynagrodzenia", "question": "Ile wynosiło przeciętne miesięczne wynagrodzenie brutto w Polsce w 2024 roku?", "expected": 8630.0, "tolerance": 1.0}
+{"category": "cpi_category", "source": "GUS BDL - CPI kategorie", "question": "O ile procent zmieniły się ceny żywności i napojów bezalkoholowych w Polsce w 2023 roku?", "expected": 15.1, "tolerance": 0.05}
+{"category": "cpi_category", "source": "GUS BDL - CPI kategorie", "question": "O ile procent zmieniły się ceny transportu w Polsce w 2025 roku?", "expected": -3.9, "tolerance": 0.05}
+{"category": "cpi_category", "source": "GUS BDL - CPI kategorie", "question": "O ile procent zmieniły się ceny mieszkania (użytkowania mieszkania i nośników energii) w Polsce w 2024 roku?", "expected": 4.8, "tolerance": 0.05}
+{"category": "rpp_rate", "source": "NBP - RPP", "question": "Ile wynosiła stopa referencyjna NBP po posiedzeniu RPP we wrześniu 2022 roku?", "expected": 6.75, "tolerance": 0.001}
+{"category": "rpp_rate", "source": "NBP - RPP", "question": "Ile wynosiła stopa referencyjna NBP po posiedzeniu RPP w listopadzie 2024 roku?", "expected": 5.75, "tolerance": 0.001}
+{"category": "rpp_rate", "source": "NBP - RPP", "question": "Ile wynosiła stopa referencyjna NBP po posiedzeniu RPP w lipcu 2026 roku?", "expected": 3.75, "tolerance": 0.001}
+{"category": "out_of_scope", "source": null, "question": "Jaki był wzrost PKB Niemiec w 2023 roku?", "expect_refusal": true}
+{"category": "out_of_scope", "source": null, "question": "Ile wynosiła inflacja w Czechach w 2022 roku?", "expect_refusal": true}
+{"category": "out_of_scope", "source": null, "question": "Jaka będzie stopa referencyjna NBP w 2030 roku?", "expect_refusal": true}
+{"category": "out_of_scope", "source": null, "question": "Ile kosztował metr kwadratowy mieszkania w Warszawie w 2024 roku?", "expect_refusal": true}

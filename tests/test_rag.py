@@ -115,3 +115,85 @@ class TestStreamAnswerErrors:
 
         assert [e[0] for e in events] == ["sources", "error"]
         assert events[-1][1] == rag.LLM_ERROR_MESSAGE
+
+
+class TestRouting:
+    def test_indicator_questions_are_routed(self):
+        from app.rag import _route
+
+        assert _route("Jaka była inflacja CPI w 2022?") == ["GUS BDL - CPI"]
+        assert _route("Ile wynosiła stopa bezrobocia w 2013 roku?") == ["GUS BDL - Bezrobocie"]
+        assert _route("Przeciętne wynagrodzenie brutto w 2024") == ["GUS BDL - Wynagrodzenia"]
+        assert "GUS BDL - CPI kategorie" in _route("Jak zmieniły się ceny żywności w 2023?")
+        assert _route("Ile kosztuje gram złota?") == ["NBP API - Ceny złota"]
+
+    def test_currency_and_statements_are_not_routed(self):
+        from app.rag import _route
+
+        assert _route("Ile kosztuje 100 złotych w euro?") == []
+        assert _route("Kiedy RPP podniosła stopy procentowe?") == []
+
+    def test_routed_tables_come_first_without_duplicates(self):
+        from unittest.mock import patch
+
+        from app import rag
+
+        table = {"text": "CPI table", "metadata": {"source": "GUS BDL - CPI"}, "distance": 0.0}
+        other = {"text": "RPP statement", "metadata": {"source": "NBP - RPP"}, "distance": 0.3}
+        with patch("app.rag.get_by_source", return_value=[table]), \
+             patch("app.rag.query", return_value=[other, dict(table, distance=0.2)]):
+            chunks = rag.retrieve("inflacja w 2022")
+        assert [c["text"] for c in chunks] == ["CPI table", "RPP statement"]
+
+
+class TestModelFallback:
+    @staticmethod
+    def _rate_limit(message):
+        from unittest.mock import MagicMock
+
+        from groq import RateLimitError
+
+        return RateLimitError(message, response=MagicMock(status_code=429), body=None)
+
+    def test_daily_quota_falls_back_to_second_model(self):
+        from unittest.mock import MagicMock, patch
+
+        from app import rag
+
+        client = MagicMock()
+        client.chat.completions.create.side_effect = [
+            self._rate_limit("Rate limit reached on tokens per day (TPD)"), "ok",
+        ]
+        with patch("app.rag._get_client", return_value=client):
+            assert rag._complete("openai/gpt-oss-120b", messages=[]) == "ok"
+        models = [c.kwargs["model"] for c in client.chat.completions.create.call_args_list]
+        assert models == ["openai/gpt-oss-120b", rag.settings.groq_fallback_model]
+
+    def test_short_burst_limit_is_not_hidden(self):
+        from unittest.mock import MagicMock, patch
+
+        import pytest
+
+        from app import rag
+
+        client = MagicMock()
+        client.chat.completions.create.side_effect = self._rate_limit("tokens per minute (TPM)")
+        with patch("app.rag._get_client", return_value=client), pytest.raises(Exception):
+            rag._complete("openai/gpt-oss-120b", messages=[])
+        assert client.chat.completions.create.call_count == 1
+
+
+class TestEmbeddingRetries:
+    def test_rate_limited_embedding_request_is_retried(self):
+        from unittest.mock import MagicMock, patch
+
+        from app import vectorstore
+
+        limited = MagicMock(status_code=429, headers={"Retry-After": "1"})
+        ok = MagicMock(status_code=200, headers={})
+        ok.json.return_value = {"data": [{"embedding": [0.1, 0.2]}]}
+        with patch.object(vectorstore.requests, "post", side_effect=[limited, ok]) as post, \
+             patch.object(vectorstore.time, "sleep") as sleep:
+            assert vectorstore._embed(["tekst"], task="retrieval.query") == [[0.1, 0.2]]
+        assert post.call_count == 2
+        sleep.assert_called_once_with(1.0)
