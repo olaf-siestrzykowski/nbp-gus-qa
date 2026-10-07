@@ -121,7 +121,7 @@
   </div>
 
   <div class="input-row">
-    <textarea id="question" rows="2" placeholder="Zadaj pytanie o polską gospodarkę..."></textarea>
+    <textarea id="question" rows="2" maxlength="1000" placeholder="Zadaj pytanie o polską gospodarkę..."></textarea>
     <button id="askBtn" onclick="ask()">Zapytaj</button>
   </div>
 
@@ -283,7 +283,15 @@ async function ask() {
       body: JSON.stringify({ question: q, history: conversationHistory })
     });
 
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    if (!response.ok) {
+      // 429 (rate limit) and 400 carry a message for the user in "detail"
+      let detail = `HTTP ${response.status}`;
+      try {
+        const body = await response.json();
+        if (typeof body.detail === 'string') detail = body.detail;
+      } catch {}
+      throw new Error(detail);
+    }
 
     const reader = response.body.getReader();
     const decoder = new TextDecoder();

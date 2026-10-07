@@ -116,6 +116,13 @@ wrong documents and said it had no data rather than inventing a number.
 - **Numbers are converted in the prompt, and checked by the eval.** GUS publishes CPI
   as "previous year = 100"; the prompt spells out the conversion (114.4 → 14.4%)
   after the model once subtracted consecutive years.
+- **Rate limiting, because every question costs tokens.** `/ask` and `/ask/stream`
+  allow 5 questions per minute and 50 per day per client IP, plus 1000 per day in
+  total, which caps the daily bill even when requests come from many addresses
+  (`app/ratelimit.py`, overridable via `RATE_LIMIT_PER_MINUTE`, `RATE_LIMIT_PER_DAY`,
+  `RATE_LIMIT_GLOBAL_PER_DAY`). Counters live in memory, which is enough for one Render
+  instance. Requests are bounded too: question up to 1000 characters, history up to
+  12 user/assistant messages, so a client cannot inject a `system` message.
 - **Graceful degradation on free tiers.** Groq retires models and has per-model
   daily quotas. When the main model hits its daily quota or is retired, the app
   falls back to `GROQ_FALLBACK_MODEL`; if that fails too, the UI shows an error

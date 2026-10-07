@@ -16,6 +16,10 @@ class Settings(BaseSettings):
     groq_fallback_model: str = "openai/gpt-oss-20b"
     chroma_path: str = str(BASE_DIR / "data" / "chroma")
     chroma_collection: str = "nbp_gus_docs"
+    # Per client IP, and for all clients together (caps the daily LLM bill)
+    rate_limit_per_minute: int = 5
+    rate_limit_per_day: int = 50
+    rate_limit_global_per_day: int = 1000
     top_k: int = 5
     chunk_size: int = 800
     chunk_overlap: int = 100

@@ -3,14 +3,16 @@ import logging
 import threading
 from contextlib import asynccontextmanager
 from pathlib import Path
+from typing import Literal
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.config import settings
 from app.rag import LLM_ERROR_MESSAGE, answer, stream_answer
+from app.ratelimit import rate_limit
 from app.vectorstore import collection_count
 
 logging.basicConfig(level=logging.INFO)
@@ -49,9 +51,16 @@ FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
 app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="static")
 
 
+class HistoryMessage(BaseModel):
+    # Only user/assistant turns: a client must not be able to inject a "system" message
+    role: Literal["user", "assistant"]
+    content: str = Field(max_length=12_000)  # an answer is at most ~2k tokens
+
+
 class QuestionRequest(BaseModel):
-    question: str
-    history: list[dict] = []
+    # Bounded so one request cannot burn a large number of tokens
+    question: str = Field(max_length=1_000)
+    history: list[HistoryMessage] = Field(default=[], max_length=12)
 
 
 class AnswerResponse(BaseModel):
@@ -64,24 +73,29 @@ def index():
     return FileResponse(str(FRONTEND_DIR / "index.html"))
 
 
-@app.post("/ask", response_model=AnswerResponse)
-def ask(req: QuestionRequest):
+def _history(req: QuestionRequest) -> list[dict]:
+    return [m.model_dump() for m in req.history]
+
+
+# Empty questions are rejected before the rate limit, so they do not use up the quota
+def _require_question(req: QuestionRequest):
     if not req.question.strip():
         raise HTTPException(status_code=400, detail="Pytanie nie może być puste.")
+
+
+@app.post("/ask", response_model=AnswerResponse, dependencies=[Depends(_require_question), Depends(rate_limit)])
+def ask(req: QuestionRequest):
     try:
-        return answer(req.question, req.history)
+        return answer(req.question, _history(req))
     except Exception:
         logger.exception("LLM call failed (model=%s)", settings.groq_model)
         raise HTTPException(status_code=502, detail=LLM_ERROR_MESSAGE)
 
 
-@app.post("/ask/stream")
+@app.post("/ask/stream", dependencies=[Depends(_require_question), Depends(rate_limit)])
 def ask_stream(req: QuestionRequest):
-    if not req.question.strip():
-        raise HTTPException(status_code=400, detail="Pytanie nie może być puste.")
-
     def generate():
-        for event_type, data in stream_answer(req.question, req.history):
+        for event_type, data in stream_answer(req.question, _history(req)):
             yield f"data: {json.dumps({'type': event_type, 'data': data})}\n\n"
 
     return StreamingResponse(
