@@ -69,10 +69,16 @@ def test_idle_clients_are_forgotten():
     assert len(limiter._by_client) == 1
 
 
-def test_client_ip_uses_address_added_by_proxy():
+def test_client_ip_prefers_cloudflare_header():
     request = MagicMock()
-    request.headers = {"x-forwarded-for": "1.2.3.4, 203.0.113.7"}  # first entry is client-controlled
-    assert client_ip(request) == "203.0.113.7"
+    request.headers = {"cf-connecting-ip": "198.51.100.2", "x-forwarded-for": "198.51.100.2, 10.0.0.1"}
+    assert client_ip(request) == "198.51.100.2"
+
+
+def test_client_ip_falls_back_to_first_forwarded_entry():
+    request = MagicMock()
+    request.headers = {"x-forwarded-for": "198.51.100.2, 10.0.0.1"}  # last entry: a proxy
+    assert client_ip(request) == "198.51.100.2"
     request.headers = {}
     request.client.host = "127.0.0.1"
     assert client_ip(request) == "127.0.0.1"

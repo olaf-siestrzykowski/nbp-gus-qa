@@ -65,11 +65,16 @@ limiter = RateLimiter(
 
 
 def client_ip(request: Request) -> str:
-    # Render's proxy appends the real client address as the last X-Forwarded-For entry;
-    # earlier entries come from the client and can be spoofed
+    # Render sits behind Cloudflare, which sets CF-Connecting-IP and overwrites any value the
+    # client sends. The last X-Forwarded-For entry is a changing proxy address (checked on
+    # the live service), the first is the client according to Render but is not stripped
+    # when the client sends its own header - fallback only.
+    for header in ("cf-connecting-ip", "true-client-ip"):
+        if value := request.headers.get(header):
+            return value.strip()
     forwarded = request.headers.get("x-forwarded-for")
     if forwarded:
-        return forwarded.split(",")[-1].strip()
+        return forwarded.split(",")[0].strip()
     return request.client.host if request.client else "unknown"
 
 
